@@ -1,0 +1,54 @@
+
+UART_OUT equ 01H
+
+; atmega injecting code will load (and execute) code at the address specified here:
+org 0100H
+
+Start:
+  ld SP, 0F000H
+  ld DE, 0000H
+Start1:
+  ld H, D
+  ld L, E
+  call PrintNumber  ; print DE
+  ld HL, msg
+  call PrintString  ; print msg
+  inc DE
+  jp Start1
+
+; Print zero terminating string
+; HL : address of string
+; changes: AF, HL
+PrintString:
+  ld A, (HL)
+  cp 00H
+  ret Z
+  out (UART_OUT), A
+  inc HL
+  jp PrintString
+
+; Print 16 bit unsigned number
+; HL : number to print
+; changes: AF, BC, HL
+PrintNumber:
+  ld BC, -10000
+  call	Num1
+	ld BC, -1000
+	call	Num1
+	ld BC, -100
+	call	Num1
+	ld C, -10
+	call	Num1
+	ld C, -1
+Num1:
+  ld A, '0' - 1
+Num2:
+  inc A
+	add HL, BC
+	jr C, Num2
+	sbc HL, BC
+	out (UART_OUT), A
+	ret
+
+msg:
+  defm " Hello From Z80!!\n\0"
